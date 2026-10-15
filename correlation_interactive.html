@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Correlation Detective – HCL GUVI</title>
+<link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#22c55e;--green-dark:#16a34a;--blue:#3b82f6;--blue-dark:#1d4ed8;
+  --teal:#14b8a6;--violet:#7c3aed;--orange:#f97316;--rose:#e11d48;--amber:#d97706;
+  --indigo:#6366f1;
+  --bg:#f8fafc;--surf:#fff;--surf2:#f1f5f9;--bdr:#e2e8f0;
+  --text:#0f172a;--muted:#64748b;--light:#94a3b8;
+  --sh:0 4px 24px rgba(0,0,0,.07);--sh2:0 12px 48px rgba(0,0,0,.12);
+  --r:16px;--rs:10px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column}
+.topnav{height:64px;background:var(--surf);border-bottom:1px solid var(--bdr);display:flex;align-items:center;padding:0 22px;gap:14px;flex-shrink:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.05)}
+.topnav img{height:36px;object-fit:contain}
+.logo-fb{font-family:'Cabinet Grotesk',sans-serif;font-weight:800;font-size:17px;background:linear-gradient(135deg,var(--blue),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:none;align-items:center}
+.ndiv{width:1px;height:28px;background:var(--bdr)}
+.nmod{font-family:'Cabinet Grotesk',sans-serif;font-weight:700;font-size:14px;color:var(--text);flex:1}
+.nmod span{color:var(--blue)}
+.npw{display:flex;align-items:center;gap:9px}
+.nbar{width:140px;height:7px;background:var(--surf2);border-radius:99px;overflow:hidden}
+.nfill{height:100%;background:linear-gradient(90deg,var(--green),var(--blue));border-radius:99px;transition:width .5s ease;width:0%}
+.npct{font-size:12px;color:var(--muted);font-weight:600}
+.app-body{display:flex;flex:1;overflow:hidden}
+.sidebar{width:236px;flex-shrink:0;background:var(--surf);border-right:1px solid var(--bdr);overflow-y:auto;padding:14px 9px;display:flex;flex-direction:column;gap:2px}
+.sidebar::-webkit-scrollbar{width:3px}.sidebar::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:99px}
+.sbt{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--light);padding:7px 9px 3px}
+.ni{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;transition:all .15s;font-size:12.5px;font-weight:600;color:var(--muted);position:relative}
+.ni:hover{background:var(--surf2);color:var(--text)}
+.ni.on{background:linear-gradient(135deg,#f0fdf4,#eff6ff);color:var(--blue);border:1px solid rgba(59,130,246,.15)}
+.ni.on::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;background:linear-gradient(var(--green),var(--blue));border-radius:0 4px 4px 0}
+.ni .ic{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;background:var(--surf2);flex-shrink:0;transition:all .18s}
+.ni.on .ic{background:linear-gradient(135deg,var(--green),var(--blue))}
+.ni .db{width:14px;height:14px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;margin-left:auto;flex-shrink:0}
+.main-content{flex:1;overflow-y:auto}
+.main-content::-webkit-scrollbar{width:5px}.main-content::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:3px}
+.page{display:none;padding:34px 42px;min-height:100%;animation:fadeSlide .4s ease}
+.page.active{display:block}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.ptag{display:inline-flex;align-items:center;gap:6px;padding:4px 13px;background:linear-gradient(135deg,#f0fdf4,#eff6ff);border:1px solid rgba(59,130,246,.25);border-radius:99px;font-size:11.5px;font-weight:700;color:var(--blue);margin-bottom:13px}
+.h1{font-family:'Cabinet Grotesk',sans-serif;font-size:32px;font-weight:800;line-height:1.15;color:var(--text);margin-bottom:7px}
+.h1 span{color:var(--blue)}
+.sub{font-size:14.5px;color:var(--muted);line-height:1.65;margin-bottom:28px;max-width:700px}
+.pnav{display:flex;justify-content:space-between;align-items:center;margin-top:40px;padding-top:20px;border-top:1px solid var(--bdr)}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:11px 22px;border-radius:99px;border:none;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;font-size:13px;transition:all .2s}
+.btnp{background:linear-gradient(135deg,var(--green),var(--blue));color:#fff;box-shadow:0 4px 14px rgba(59,130,246,.28)}
+.btnp:hover{transform:translateY(-2px);box-shadow:0 7px 22px rgba(59,130,246,.38)}
+.btns{background:var(--surf2);color:var(--muted);border:1px solid var(--bdr)}
+.btns:hover{background:var(--bdr);color:var(--text)}
+.card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r);padding:22px;box-shadow:var(--sh);margin-bottom:18px;transition:box-shadow .2s}
+.card:hover{box-shadow:var(--sh2)}
+.ctitle{font-family:'Cabinet Grotesk',sans-serif;font-size:16px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.pill{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:99px;color:#fff}
+.pg{background:var(--green)}.pb{background:var(--blue)}.pt{background:var(--teal)}.pv{background:var(--violet)}.po{background:var(--orange)}.pr2{background:var(--rose)}.pa{background:var(--amber)}.pi{background:var(--indigo)}
+.cw{background:#0f172a;border-radius:var(--rs);overflow:hidden;margin:14px 0}
+.ch{display:flex;align-items:center;justify-content:space-between;padding:8px 15px;background:#1e293b;border-bottom:1px solid #334155}
+.cdots{display:flex;gap:5px}.cdots span{width:11px;height:11px;border-radius:50%}
+.dr{background:#ef4444}.dy{background:#f59e0b}.dg{background:#22c55e}
+.clg{font-size:11px;color:#64748b;font-family:'Fira Code',monospace}
+pre{padding:16px 20px;overflow-x:auto;font-family:'Fira Code',monospace;font-size:12.5px;line-height:1.75;color:#e2e8f0}
+.kw{color:#c084fc}.fn{color:#67e8f9}.st{color:#86efac}.cm{color:#64748b;font-style:italic}.nm{color:#fbbf24}.cl{color:#34d399}
+.rout{display:none;background:#0f172a;border-top:1px solid #1e293b;padding:13px 20px;font-family:'Fira Code',monospace;font-size:12px;color:#86efac}
+.rout.show{display:block;animation:fadeIn .3s}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.rl{margin-bottom:3px}.rpr{color:#475569;margin-right:6px}
+.rbtn{display:inline-flex;align-items:center;gap:6px;padding:8px 17px;background:linear-gradient(135deg,var(--green),var(--blue));color:#fff;border:none;border-radius:99px;font-family:'Nunito',sans-serif;font-weight:700;font-size:12.5px;cursor:pointer;transition:all .2s;margin-top:6px;box-shadow:0 3px 10px rgba(59,130,246,.26)}
+.rbtn:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(59,130,246,.36)}
+.ana{background:linear-gradient(135deg,#f0fdf4,#eff6ff);border:1px solid rgba(59,130,246,.2);border-left:4px solid var(--blue);border-radius:var(--rs);padding:16px 20px;margin:14px 0;display:flex;gap:13px;align-items:flex-start}
+.ana .em{font-size:24px;flex-shrink:0}
+.ana p{font-size:13.5px;line-height:1.7;color:var(--text)}
+.ana strong{color:var(--blue-dark)}
+.ibox{background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--rs);padding:13px 17px;margin:12px 0;font-size:13px;color:#1e40af;line-height:1.6}
+.wbox{background:#fffbeb;border:1px solid #fde68a;border-radius:var(--rs);padding:13px 17px;margin:12px 0;font-size:13px;color:#92400e;line-height:1.6}
+.sbox{background:#f0fdf4;border:1px solid #86efac;border-radius:var(--rs);padding:13px 17px;margin:12px 0;font-size:13px;color:#166534;line-height:1.6}
+.vbox{background:#f5f3ff;border:1px solid #ddd6fe;border-radius:var(--rs);padding:13px 17px;margin:12px 0;font-size:13px;color:#5b21b6;line-height:1.6}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin:14px 0}
+.rv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:13px;margin:14px 0}
+.rv{background:var(--surf);border:2px solid var(--bdr);border-radius:var(--rs);padding:16px;cursor:pointer;transition:all .3s;text-align:center}
+.rv:hover{border-color:var(--blue);transform:translateY(-3px);box-shadow:var(--sh2)}
+.rv.fl{border-color:var(--green);background:linear-gradient(135deg,#f0fdf4,#eff6ff)}
+.rv .fr{font-size:24px;margin-bottom:6px}.rv .ft{font-weight:700;font-size:13.5px}
+.rv .bk{display:none;font-size:12px;line-height:1.6;color:var(--muted);text-align:left;margin-top:7px}
+.rv.fl .bk{display:block;animation:fadeIn .28s}.rv.fl .fr{display:none}
+.rvh{font-size:9.5px;color:var(--light);margin-top:4px}
+.slr{display:flex;align-items:center;gap:13px;margin-bottom:11px}
+.sll{font-size:12.5px;font-weight:600;width:155px;color:var(--muted);flex-shrink:0}
+.sli{flex:1;-webkit-appearance:none;height:7px;border-radius:99px;background:var(--bdr);outline:none}
+.sli::-webkit-slider-thumb{-webkit-appearance:none;width:19px;height:19px;border-radius:50%;background:linear-gradient(135deg,var(--green),var(--blue));cursor:pointer;box-shadow:0 2px 7px rgba(59,130,246,.33)}
+.slv{font-family:'Fira Code',monospace;font-size:13px;font-weight:700;color:var(--blue);min-width:58px;text-align:right}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:linear-gradient(135deg,var(--green-dark),var(--blue-dark));color:#fff;padding:10px 13px;text-align:left;font-family:'Cabinet Grotesk',sans-serif;font-weight:700}
+td{padding:9px 13px;border-bottom:1px solid var(--bdr)}
+tr:nth-child(even) td{background:var(--surf2)}
+tr:hover td{background:#eff6ff}
+.tw{border-radius:var(--rs);overflow:hidden;border:1px solid var(--bdr);margin:13px 0}
+.qdots{display:flex;gap:6px;margin-bottom:22px}
+.qdot{width:9px;height:9px;border-radius:50%;background:var(--bdr);transition:all .3s}
+.qdot.done{background:var(--green)}.qdot.cur{background:var(--blue);transform:scale(1.3)}.qdot.wd{background:#ef4444}
+.qzc{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r);padding:26px;box-shadow:var(--sh)}
+.qn{font-size:10.5px;font-weight:700;color:var(--light);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
+.qq{font-family:'Cabinet Grotesk',sans-serif;font-size:19px;font-weight:700;margin-bottom:22px;line-height:1.4}
+.qopts{display:flex;flex-direction:column;gap:9px}
+.qopt{display:flex;align-items:center;gap:12px;padding:13px 17px;border:2px solid var(--bdr);border-radius:var(--rs);cursor:pointer;transition:all .18s;font-weight:600;font-size:13.5px}
+.qopt:hover{border-color:var(--blue);background:#eff6ff}
+.qopt .ql{width:28px;height:28px;flex-shrink:0;border-radius:7px;background:var(--surf2);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;transition:all .2s}
+.qopt.correct{border-color:var(--green);background:#f0fdf4;color:var(--green-dark);pointer-events:none}
+.qopt.wrong{border-color:#ef4444;background:#fef2f2;color:#dc2626;pointer-events:none}
+.qopt.correct .ql{background:var(--green);color:#fff}.qopt.wrong .ql{background:#ef4444;color:#fff}
+.qopt.disabled{pointer-events:none;opacity:.5}
+.qfb{margin-top:14px;padding:12px 16px;border-radius:var(--rs);font-size:13px;line-height:1.6;display:none}
+.qfb.show{display:block}.fbok{background:#f0fdf4;border:1px solid #86efac;color:#166534}.fbng{background:#fef2f2;border:1px solid #fca5a5;color:#991b1b}
+.solb{width:100%;padding:12px 22px;background:none;border:none;border-top:1px solid var(--bdr);font-family:'Nunito',sans-serif;font-weight:700;font-size:13px;cursor:pointer;color:var(--blue);display:flex;align-items:center;gap:6px;transition:background .2s}
+.solb:hover{background:#eff6ff}
+.sol{display:none}.sol.open{display:block}
+.exc{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden;margin-bottom:18px;box-shadow:var(--sh)}
+.exh{padding:16px 22px;background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:1px solid var(--bdr);display:flex;align-items:flex-start;gap:13px}
+.exnum{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--green),var(--blue));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;flex-shrink:0}
+.scwrap{text-align:center;padding:42px 0;animation:fadeSlide .5s}
+.scring{width:148px;height:148px;border-radius:50%;background:linear-gradient(135deg,var(--green),var(--blue));display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 26px;box-shadow:0 12px 48px rgba(59,130,246,.3)}
+.scn{font-family:'Cabinet Grotesk',sans-serif;font-size:44px;font-weight:800;color:#fff;line-height:1}.scd{font-size:14px;color:rgba(255,255,255,.7);font-weight:600}
+.cmpw{text-align:center;padding:52px 0}
+.cmpe{font-size:68px;animation:bounce .8s infinite alternate;display:block;margin-bottom:18px}
+@keyframes bounce{from{transform:translateY(0) scale(1)}to{transform:translateY(-11px) scale(1.06)}}
+.skw{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin:24px 0}
+.sk{display:inline-flex;align-items:center;gap:5px;padding:6px 15px;border-radius:99px;font-weight:700;font-size:12px;background:linear-gradient(135deg,var(--surf2),#fff);border:1px solid var(--bdr);box-shadow:var(--sh);transition:all .2s}
+.sk:hover{transform:translateY(-2px);box-shadow:var(--sh2)}
+.hero{background:linear-gradient(135deg,#0f172a,#1e1b4b);border-radius:var(--r);padding:46px 42px;color:#fff;position:relative;overflow:hidden;margin-bottom:26px}
+.hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60'%3E%3Ccircle cx='30' cy='30' r='4' fill='%23fff' fill-opacity='0.03'/%3E%3C/svg%3E")}
+.hero h1{font-family:'Cabinet Grotesk',sans-serif;font-size:38px;font-weight:800;line-height:1.18;margin-bottom:12px;position:relative}
+.hero h1 span{color:#93c5fd}
+.hero p{font-size:14.5px;opacity:.8;max-width:580px;line-height:1.7;position:relative}
+.hbadge{display:inline-flex;align-items:center;gap:6px;background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.4);border-radius:99px;padding:5px 13px;font-size:12px;font-weight:700;color:#c4b5fd;margin-bottom:16px;position:relative}
+.hchips{display:flex;gap:9px;margin-top:22px;flex-wrap:wrap;position:relative}
+.hchip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:99px;padding:6px 14px;font-size:12px;font-weight:700;color:#fff}
+canvas{border-radius:var(--rs);border:1.5px solid var(--bdr);background:#fafbff;max-width:100%}
+.cp{position:fixed;width:9px;height:9px;border-radius:2px;top:-10px;animation:cfall linear forwards;z-index:9999;pointer-events:none}
+@keyframes cfall{to{transform:translateY(100vh) rotate(720deg);opacity:0}}
+code{font-family:'Fira Code',monospace;background:rgba(59,130,246,.08);color:var(--blue);padding:1px 5px;border-radius:4px;font-size:11.5px}
+input[type=range]{accent-color:var(--blue)}
+.cb-toggle{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.ctog{padding:7px 14px;border-radius:99px;border:2px solid var(--bdr);background:var(--surf);cursor:pointer;font-size:12.5px;font-weight:700;font-family:'Nunito',sans-serif;color:var(--muted);transition:all .2s}
+.ctog:hover{border-color:var(--blue);color:var(--blue)}
+.ctog.on{border-color:var(--blue);background:linear-gradient(135deg,#eff6ff,#f0fdf4);color:var(--blue)}
+.formula{background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:var(--rs);padding:20px 24px;text-align:center;font-family:'Fira Code',monospace;font-size:15px;color:#fff;margin:14px 0;line-height:2.1}
+.formula .ft-g{color:#86efac}.formula .ft-b{color:#93c5fd}.formula .ft-v{color:#c4b5fd}.formula .ft-y{color:#fde68a}.formula .ft-r{color:#fca5a5}
+.rgauge{font-family:'Fira Code',monospace;font-weight:800;font-size:30px;text-align:center;margin:6px 0}
+.scenmap{display:flex;flex-direction:column;gap:8px}
+.scen-node{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:var(--rs);font-size:13px;font-weight:600;border:1.5px solid var(--bdr);background:var(--surf)}
+.scen-ico{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;color:#fff}
+.scen-arrow{text-align:center;color:var(--light);font-size:15px;font-weight:800}
+@media(max-width:900px){.page{padding:18px 14px}.g2,.g3,.g4,.rv-grid{grid-template-columns:1fr}.sll{width:120px}}
+*{-webkit-font-smoothing:antialiased}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <header style="display:flex;align-items:center;width:auto">
+    <img src="logo.png" alt="HCL-GUVI Logo" onerror="this.style.display='none';document.getElementById('lfb').style.display='flex'">
+  </header>
+  <div id="lfb" class="logo-fb">🔍 HCL GUVI</div>
+  <div class="ndiv"></div>
+  <div class="nmod">The Correlation <span>Detective</span></div>
+  <div class="npw">
+    <div class="nbar"><div class="nfill" id="nfill"></div></div>
+    <span class="npct" id="npct">0%</span>
+  </div>
+</nav>
+
+<div class="app-body">
+<aside class="sidebar">
+  <div class="sbt">Correlation Module</div>
+  <div class="ni on" onclick="goTo(0)" id="nav0"><div class="ic">🏠</div>Welcome</div>
+  <div class="ni" onclick="goTo(1)" id="nav1"><div class="ic">🔗</div>What Is Correlation?</div>
+  <div class="ni" onclick="goTo(2)" id="nav2"><div class="ic">🎮</div>Live Scatter Lab</div>
+  <div class="ni" onclick="goTo(3)" id="nav3"><div class="ic">👑</div>Pearson's r</div>
+  <div class="ni" onclick="goTo(4)" id="nav4"><div class="ic">🧮</div>Pearson Worked Example</div>
+  <div class="ni" onclick="goTo(5)" id="nav5"><div class="ic">🎖️</div>Spearman's ρ</div>
+  <div class="ni" onclick="goTo(6)" id="nav6"><div class="ic">🪜</div>Spearman Worked Example</div>
+  <div class="ni" onclick="goTo(7)" id="nav7"><div class="ic">🧰</div>Which Tool?</div>
+  <div class="ni" onclick="goTo(8)" id="nav8"><div class="ic">🍦</div>Correlation ≠ Causation</div>
+  <div class="ni" onclick="goTo(9)" id="nav9"><div class="ic">🧩</div>Quiz</div>
+  <div class="ni" onclick="goTo(10)" id="nav10"><div class="ic">🎉</div>Completion</div>
+</aside>
+
+<main class="main-content">
+
+<!-- PAGE 0: WELCOME -->
+<div class="page active" id="page0">
+  <div class="hero">
+    <div class="hbadge">🔍 Data Science Foundation</div>
+    <h1>The Correlation <span>Detective</span></h1>
+    <p>Two things move together — but why? Learn to read patterns like a detective: measure how strongly variables are linked, pick the right tool for the job, and never fall for the trap of mistaking a coincidence for a cause.</p>
+    <div class="hchips">
+      <span class="hchip">🔗 Positive / Negative / Zero</span><span class="hchip">👑 Pearson's r</span><span class="hchip">🎖️ Spearman's ρ</span>
+      <span class="hchip">🎮 Live scatter lab</span><span class="hchip">🍦 Correlation ≠ Causation</span>
+    </div>
+  </div>
+  <div class="g3">
+    <div style="background:linear-gradient(135deg,#f0fdf4,#eff6ff);border:1px solid var(--bdr);border-radius:var(--rs);padding:18px;text-align:center"><div style="font-size:28px;margin-bottom:8px">🔗</div><div style="font-weight:700;font-size:14px;margin-bottom:4px">Intuition First</div><div style="font-size:12px;color:var(--muted)">Plain-English understanding before any formula</div></div>
+    <div style="background:linear-gradient(135deg,#f0fdf4,#eff6ff);border:1px solid var(--bdr);border-radius:var(--rs);padding:18px;text-align:center"><div style="font-size:28px;margin-bottom:8px">🎮</div><div style="font-weight:700;font-size:14px;margin-bottom:4px">Drag-the-Data Labs</div><div style="font-size:12px;color:var(--muted)">Watch r change as the scatter plot changes</div></div>
+    <div style="background:linear-gradient(135deg,#f0fdf4,#eff6ff);border:1px solid var(--bdr);border-radius:var(--rs);padding:18px;text-align:center"><div style="font-size:28px;margin-bottom:8px">🐍</div><div style="font-weight:700;font-size:14px;margin-bottom:4px">Hand + Python</div><div style="font-size:12px;color:var(--muted)">Every calculation done by hand AND in code</div></div>
+  </div>
+  <div class="card">
+    <div class="ctitle">🗺️ Your Investigation Route <span class="pill pb">10 stops</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      <div style="display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--surf2);border-radius:var(--rs);font-size:13px;font-weight:600"><span style="color:var(--green)">✓</span>What correlation really measures (and doesn't)</div>
+      <div style="display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--surf2);border-radius:var(--rs);font-size:13px;font-weight:600"><span style="color:var(--green)">✓</span>Linear vs non-linear vs no relationship</div>
+      <div style="display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--surf2);border-radius:var(--rs);font-size:13px;font-weight:600"><span style="color:var(--green)">✓</span>Pearson's r — by hand & in Python</div>
+      <div style="display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--surf2);border-radius:var(--rs);font-size:13px;font-weight:600"><span style="color:var(--green)">✓</span>Spearman's ρ — by hand & in Python</div>
+      <div style="display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--surf2);border-radius:var(--rs);font-size:13px;font-weight:600"><span style="color:var(--green)">✓</span>Choosing the right tool for your data</div>
+      <div style="display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--surf2);border-radius:var(--rs);font-size:13px;font-weight:600"><span style="color:var(--green)">✓</span>Confounders, spurious links & the causation trap</div>
+    </div>
+  </div>
+  <div class="pnav"><div></div><button class="btnp" onclick="goTo(1)">Start Investigating →</button></div>
+</div>
+
+<!-- PAGE 1: WHAT IS CORRELATION -->
+<div class="page" id="page1">
+  <div class="ptag">🔗 Stop 1 of 8</div>
+  <h1 class="h1">What Is <span>Correlation?</span></h1>
+  <p class="sub">At its heart, correlation just measures how two things tend to move together. Do they rise and fall in step? Does one climb while the other drops? Or is there no connection at all? Spotting which one you're looking at is the first move in any investigation.</p>
+
+  <div class="ana"><div class="em">🕵️</div><p><strong>The detective's one-liner:</strong> Correlation answers a single question — <em>"When one thing changes, does the other one tend to change too?"</em> It measures <strong>association</strong>, not magic, not cause, and not certainty. It's the clue that starts an investigation, never the verdict that ends it.</p></div>
+
+  <div class="card">
+    <div class="ctitle">🎢 The Three Flavours of Correlation <span class="pill pg">Interactive</span></div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Click each card to see a live example. Notice how the dots line up differently in each one.</p>
+    <div class="cb-toggle" id="flavTog">
+      <button class="ctog on" onclick="selFlav('pos',this)">📈 Positive</button>
+      <button class="ctog" onclick="selFlav('neg',this)">📉 Negative</button>
+      <button class="ctog" onclick="selFlav('zero',this)">↔️ Zero / None</button>
+    </div>
+    <div class="g2" style="align-items:center;margin-top:4px">
+      <canvas id="flavCanvas" height="220"></canvas>
+      <div id="flavInfo" style="padding:4px"></div>
+    </div>
+  </div>
+
+  <div class="g3">
+    <div class="card" style="margin-bottom:0">
+      <div style="font-size:26px;margin-bottom:6px">📈</div>
+      <div style="font-weight:700;font-size:14px;margin-bottom:6px;color:var(--green-dark)">Positive</div>
+      <p style="font-size:12.5px;color:var(--muted);line-height:1.6"><strong>Hours studied vs exam score.</strong> The more a student studies, the higher their marks tend to be. Both move in the <strong>same</strong> direction.</p>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div style="font-size:26px;margin-bottom:6px">📉</div>
+      <div style="font-weight:700;font-size:14px;margin-bottom:6px;color:var(--rose)">Negative</div>
+      <p style="font-size:12.5px;color:var(--muted);line-height:1.6"><strong>Driving speed vs journey time.</strong> The faster you drive, the less time the trip takes. One goes up, the other comes <strong>down</strong>.</p>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div style="font-size:26px;margin-bottom:6px">↔️</div>
+      <div style="font-weight:700;font-size:14px;margin-bottom:6px;color:var(--muted)">Zero / None</div>
+      <p style="font-size:12.5px;color:var(--muted);line-height:1.6"><strong>Shoe size vs exam score.</strong> Knowing someone's shoe size tells you <strong>nothing</strong> about their exam result. No pattern at all.</p>
+    </div>
+  </div>
+
+  <div class="sbox">💡 <strong>Key takeaway:</strong> Correlation measures how closely two things are related — the <em>direction</em> (same way or opposite ways) and the <em>strength</em> (tight pattern or loose cloud). It never, on its own, tells you <em>why</em>.</div>
+
+  <div class="pnav"><button class="btns" onclick="goTo(0)">← Welcome</button><button class="btnp" onclick="goTo(2)">Live Scatter Lab →</button></div>
+</div>
+
+<!-- PAGE 2: LIVE SCATTER LAB -->
+<div class="page" id="page2">
+  <div class="ptag">🎮 Stop 2 of 8</div>
+  <h1 class="h1">The Live <span>Scatter Lab</span></h1>
+  <p class="sub">This is the single most useful habit you can build: <strong>always look at the picture</strong>. Below you can reshape a cloud of data and watch the correlation number react in real time. Play until you can predict r before you read it.</p>
+
+  <div class="ana"><div class="em">👀</div><p><strong>Why plot first?</strong> A single number like r can hide a lot. A curve, an outlier, or two separate clusters can all fool the maths. Your eyes catch what the formula misses — so the picture always comes first.</p></div>
+
+  <div class="card">
+    <div class="ctitle">🎛️ Correlation Playground <span class="pill pg">Interactive</span></div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Pick a shape, then slide the noise up and down. Watch how the scatter and the r value change together.</p>
+    <div class="cb-toggle" id="shapeTog">
+      <button class="ctog on" onclick="selShape('linpos',this)">Linear ↗ up</button>
+      <button class="ctog" onclick="selShape('linneg',this)">Linear ↘ down</button>
+      <button class="ctog" onclick="selShape('curve',this)">Curved ∪ (non-linear)</button>
+      <button class="ctog" onclick="selShape('none',this)">No relationship</button>
+    </div>
+    <div class="slr">
+      <span class="sll">Noise / scatter</span>
+      <input type="range" class="sli" min="0" max="100" value="20" id="sl_noise" oninput="drawPlayground()">
+      <span class="slv" id="sv_noise">20%</span>
+    </div>
+    <div class="g2" style="align-items:start">
+      <canvas id="playCanvas" height="300"></canvas>
+      <div>
+        <div style="background:var(--surf2);border-radius:var(--rs);padding:18px;text-align:center">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--light)">Pearson's r</div>
+          <div class="rgauge" id="playR">0.00</div>
+          <div id="playStrength" style="font-size:12.5px;font-weight:700"></div>
+        </div>
+        <div id="playInsight" class="ibox" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wbox">⚠️ <strong>Try the "Curved ∪" shape.</strong> Even when the dots form a clear, strong U-pattern, Pearson's r drops near <strong>zero</strong>. Pearson only sees <em>straight-line</em> trends — a perfect reason to always plot before you trust a number.</div>
+
+  <div class="card">
+    <div class="ctitle">🔀 Guess the r — Pattern Match <span class="pill pv">Mini-game</span></div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Look at each scatter and click the r value you think matches. Instant feedback tells you how your eye is developing.</p>
+    <div id="guessWrap"></div>
+  </div>
+
+  <div class="pnav"><button class="btns" onclick="goTo(1)">← What Is Correlation?</button><button class="btnp" onclick="goTo(3)">Meet Pearson →</button></div>
+</div>
+
+<!-- PAGE 3: PEARSON CONCEPT -->
+<div class="page" id="page3">
+  <div class="ptag">👑 Stop 3 of 8</div>
+  <h1 class="h1">Meet Pearson: <span>King of the Straight Line</span></h1>
+  <p class="sub">The Pearson correlation coefficient — written <strong>r</strong> — is the most widely used measure of correlation. Built by Karl Pearson in the late 1800s, it tells you exactly how strongly two <em>numerical</em> variables move together in a straight line, and in which direction.</p>
+
+  <div class="ana"><div class="em">🎚️</div><p><strong>The whole idea in one sentence:</strong> Pearson's r is a single dial that runs from <strong>−1 to +1</strong>. The <em>sign</em> tells you the direction (+ = rise together, − = one up one down) and the <em>size</em> tells you the strength (near 1 = tight line, near 0 = loose cloud).</p></div>
+
+  <div class="card">
+    <div class="ctitle">🌡️ The r Scale, End to End <span class="pill pg">Interactive</span></div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Drag the dial from −1 to +1 and watch the scatter morph from a perfect downhill line, to a shapeless cloud, to a perfect uphill line.</p>
+    <div class="slr">
+      <span class="sll">Set r =</span>
+      <input type="range" class="sli" min="-100" max="100" value="70" id="sl_setr" oninput="drawSetR()">
+      <span class="slv" id="sv_setr">0.70</span>
+    </div>
+    <div class="g2" style="align-items:center">
+      <canvas id="setrCanvas" height="240"></canvas>
+      <div id="setrInfo"></div>
+    </div>
+  </div>
+
+  <div class="g3">
+    <div class="card" style="margin-bottom:0;text-align:center">
+      <div class="rgauge" style="color:var(--green-dark)">+1</div>
+      <div style="font-size:12.5px;color:var(--muted);line-height:1.6"><strong>Perfect positive.</strong> Every point sits exactly on an upward straight line.</div>
+    </div>
+    <div class="card" style="margin-bottom:0;text-align:center">
+      <div class="rgauge" style="color:var(--muted)">0</div>
+      <div style="font-size:12.5px;color:var(--muted);line-height:1.6"><strong>No linear link.</strong> Points scattered with no straight-line pattern.</div>
+    </div>
+    <div class="card" style="margin-bottom:0;text-align:center">
+      <div class="rgauge" style="color:var(--rose)">−1</div>
+      <div style="font-size:12.5px;color:var(--muted);line-height:1.6"><strong>Perfect negative.</strong> Every point sits exactly on a downward straight line.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">📏 Reading the Strength</div>
+    <div class="tw"><table>
+      <tr><th>Absolute value |r|</th><th>Strength</th><th>What it means in plain English</th></tr>
+      <tr><td><strong>0.7 – 1.0</strong></td><td><span style="color:var(--green-dark);font-weight:700">Strong</span></td><td>A reliable, clear straight-line link. The two variables are tightly connected.</td></tr>
+      <tr><td><strong>0.4 – 0.7</strong></td><td><span style="color:var(--amber);font-weight:700">Moderate</span></td><td>A noticeable trend, but other factors are clearly at play too.</td></tr>
+      <tr><td><strong>below 0.4</strong></td><td><span style="color:var(--rose);font-weight:700">Weak</span></td><td>A faint or negligible link. Not reliable on its own.</td></tr>
+    </table></div>
+    <p style="font-size:12px;color:var(--light);margin-top:8px">The sign (+/−) is separate: it only sets the direction. |r| = 0.85 and |r| = −0.85 are equally strong.</p>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">🧠 What The Formula Is Really Saying</div>
+    <div class="formula">
+      r = <span class="ft-y">Σ(xᵢ − x̄)(yᵢ − ȳ)</span> / <span class="ft-b">√[ Σ(xᵢ − x̄)² · Σ(yᵢ − ȳ)² ]</span>
+    </div>
+    <p style="font-size:13.5px;color:var(--text);line-height:1.75">It looks scary, but the idea is simple. The <span style="color:var(--amber);font-weight:700">top</span> measures how much x and y <em>move together</em> — when x is above its average, is y usually above its average too? The <span style="color:var(--blue);font-weight:700">bottom</span> just rescales that into the tidy −1 to +1 range by dividing out how much each variable wobbles on its own. So r is basically <strong>"do they move together?" divided by "how much do they each move?"</strong></p>
+  </div>
+
+  <div class="wbox">⚠️ <strong>Pearson's one big blind spot:</strong> it only sees <em>straight lines</em>. If your data bends into a curve — say performance rises then falls — Pearson can report a near-zero r even when a strong relationship is staring you in the face. That's why you plotted first in the last stop. Always plot first!</div>
+
+  <div class="pnav"><button class="btns" onclick="goTo(2)">← Scatter Lab</button><button class="btnp" onclick="goTo(4)">Work an Example →</button></div>
+</div>
+
+<!-- PAGE 4: PEARSON WORKED EXAMPLE -->
+<div class="page" id="page4">
+  <div class="ptag">🧮 Stop 4 of 8</div>
+  <h1 class="h1">Pearson by Hand: <span>Study Time vs Grade</span></h1>
+  <p class="sub">Let's calculate a real Pearson's r from scratch — no software, no shortcuts. We track five students, recording how many hours each studied and the exam score they earned. By the end you'll see exactly where that single number comes from.</p>
+
+  <div class="card">
+    <div class="ctitle">📋 The Data <span class="pill pb">5 students</span></div>
+    <div class="g2" style="align-items:center">
+      <div class="tw" style="margin:0"><table>
+        <tr><th>Student</th><th>Hours (X)</th><th>Score (Y)</th></tr>
+        <tr><td>Alice</td><td>1</td><td>50</td></tr>
+        <tr><td>Ben</td><td>2</td><td>60</td></tr>
+        <tr><td>Clara</td><td>3</td><td>65</td></tr>
+        <tr><td>David</td><td>4</td><td>75</td></tr>
+        <tr><td>Emma</td><td>5</td><td>85</td></tr>
+        <tr><td><strong>Mean</strong></td><td><strong>x̄ = 3</strong></td><td><strong>ȳ = 67</strong></td></tr>
+      </table></div>
+      <div><canvas id="pearsonScatter" height="240"></canvas><p style="font-size:12px;color:var(--light);text-align:center;margin-top:6px">The points climb almost perfectly — a straight line fits well, so Pearson is the right tool.</p></div>
+    </div>
+  </div>
+
+  <div class="exc">
+    <div class="exh"><div class="exnum">1</div><div><div style="font-weight:700;font-size:14.5px;margin-bottom:4px">Find each deviation from the mean</div><div style="font-size:13px;color:var(--muted);line-height:1.6">For every student, work out how far their X and Y sit from the averages (x̄ = 3, ȳ = 67). These deviations are the raw material of the whole formula.</div></div></div>
+    <div style="padding:18px 22px">
+      <div class="tw" style="margin:0"><table>
+        <tr><th>Student</th><th>X−x̄</th><th>Y−ȳ</th><th>(X−x̄)(Y−ȳ)</th><th>(X−x̄)²</th><th>(Y−ȳ)²</th></tr>
+        <tr><td>Alice</td><td>−2</td><td>−17</td><td>+34</td><td>4</td><td>289</td></tr>
+        <tr><td>Ben</td><td>−1</td><td>−7</td><td>+7</td><td>1</td><td>49</td></tr>
+        <tr><td>Clara</td><td>0</td><td>−2</td><td>0</td><td>0</td><td>4</td></tr>
+        <tr><td>David</td><td>1</td><td>8</td><td>+8</td><td>1</td><td>64</td></tr>
+        <tr><td>Emma</td><td>2</td><td>18</td><td>+36</td><td>4</td><td>324</td></tr>
+        <tr><td><strong>Σ (sum)</strong></td><td><strong>0</strong></td><td><strong>0</strong></td><td><strong>85</strong></td><td><strong>10</strong></td><td><strong>730</strong></td></tr>
+      </table></div>
+      <p style="font-size:12px;color:var(--light);margin-top:8px">Note the deviations always sum to 0 — that's a handy self-check that your means are right.</p>
+    </div>
+  </div>
+
+  <div class="exc">
+    <div class="exh"><div class="exnum">2</div><div><div style="font-weight:700;font-size:14.5px;margin-bottom:4px">Add up the "move together" column (the numerator)</div><div style="font-size:13px;color:var(--muted);line-height:1.6">Sum the (X−x̄)(Y−ȳ) column. Every value is positive here, which already tells us the relationship is positive.</div></div></div>
+    <div style="padding:18px 22px">
+      <div class="formula" style="font-size:14px">Σ(X−x̄)(Y−ȳ) = 34 + 7 + 0 + 8 + 36 = <span class="ft-y">85</span></div>
+    </div>
+  </div>
+
+  <div class="exc">
+    <div class="exh"><div class="exnum">3</div><div><div style="font-weight:700;font-size:14.5px;margin-bottom:4px">Build the denominator (the rescaler)</div><div style="font-size:13px;color:var(--muted);line-height:1.6">Multiply the two "spread" sums, then take the square root. This shrinks the answer into the −1 to +1 range.</div></div></div>
+    <div style="padding:18px 22px">
+      <div class="formula" style="font-size:14px">√[ <span class="ft-b">Σ(X−x̄)²</span> · <span class="ft-b">Σ(Y−ȳ)²</span> ] = √[ 10 × 730 ] = √7300 ≈ <span class="ft-b">85.44</span></div>
+    </div>
+  </div>
+
+  <div class="exc">
+    <div class="exh"><div class="exnum">4</div><div><div style="font-weight:700;font-size:14.5px;margin-bottom:4px">Divide to get r</div><div style="font-size:13px;color:var(--muted);line-height:1.6">Numerator over denominator — that's the final Pearson coefficient.</div></div></div>
+    <div style="padding:18px 22px">
+      <div class="formula" style="font-size:18px">r = <span class="ft-y">85</span> / <span class="ft-b">85.44</span> ≈ <span class="ft-g" style="font-weight:800">0.995</span></div>
+    </div>
+  </div>
+
+  <div class="ana"><div class="em">🎯</div><p><strong>Interpreting r ≈ 0.99:</strong> That's an almost perfect positive linear correlation. Students who studied more scored higher — consistently, across all five points. The line fits so tightly that study hours track exam scores almost exactly. In any report you'd call this a <strong>very strong positive linear correlation</strong>.</p></div>
+
+  <div class="card">
+    <div class="ctitle">🐍 The Same Result in Python <span class="pill pb">Code</span></div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:6px">In real work you'd never grind through the table by hand — a library does it in one line. Here are three equivalent ways.</p>
+    <div class="cw"><div class="ch"><div class="cdots"><span class="dr"></span><span class="dy"></span><span class="dg"></span></div><span class="clg">python</span></div>
+<pre><span class="kw">import</span> numpy <span class="kw">as</span> np
+<span class="kw">from</span> scipy <span class="kw">import</span> stats
+
+hours  = [<span class="nm">1</span>, <span class="nm">2</span>, <span class="nm">3</span>, <span class="nm">4</span>, <span class="nm">5</span>]        <span class="cm"># X: hours studied</span>
+scores = [<span class="nm">50</span>, <span class="nm">60</span>, <span class="nm">65</span>, <span class="nm">75</span>, <span class="nm">85</span>]  <span class="cm"># Y: exam score</span>
+
+<span class="cm"># Option 1 — SciPy: gives r AND a p-value for significance</span>
+r, p_value = stats.pearsonr(hours, scores)
+print(<span class="st">f"Pearson r = {r:.3f}"</span>)      <span class="cm"># 0.995</span>
+print(<span class="st">f"p-value   = {p_value:.4f}"</span>)  <span class="cm"># 0.0004 → statistically significant</span>
+
+<span class="cm"># Option 2 — NumPy correlation matrix (r sits off the diagonal)</span>
+r_np = np.corrcoef(hours, scores)[<span class="nm">0</span>, <span class="nm">1</span>]
+print(<span class="st">f"NumPy r   = {r_np:.3f}"</span>)     <span class="cm"># 0.995</span>
+
+<span class="cm"># Option 3 — pandas, if your data is in a DataFrame</span>
+<span class="kw">import</span> pandas <span class="kw">as</span> pd
+df = pd.DataFrame({<span class="st">"hours"</span>: hours, <span class="st">"scores"</span>: scores})
+print(df.corr(method=<span class="st">"pearson"</span>))</pre></div>
+    <button class="rbtn" onclick="toggleOut('outPearson')">▶ Run Demo</button>
+    <div class="rout" id="outPearson">
+      <div class="rl"><span class="rpr">&gt;&gt;&gt;</span>Pearson r = 0.995</div>
+      <div class="rl"><span class="rpr">&gt;&gt;&gt;</span>p-value   = 0.0004  ← well below 0.05, so unlikely to be chance</div>
+      <div class="rl"><span class="rpr">&gt;&gt;&gt;</span>NumPy r   = 0.995</div>
+      <div class="rl" style="color:#67e8f9;margin-top:6px">Hand calculation and Python agree: r ≈ 0.995 (a hair different from 0.94 rounding in older notes — the exact value here is 0.995).</div>
+    </div>
+  </div>
+
+  <div class="sbox">🔍 <strong>The causation check:</strong> does this prove studying <em>causes</em> better grades? Not by itself — but unlike ice cream and drowning, there's a clear, believable mechanism: studying builds knowledge and practice, which improves performance. When you can explain <em>why</em> X would move Y, a causal reading becomes reasonable. Always hunt for the mechanism.</div>
+
+  <div class="pnav"><button class="btns" onclick="goTo(3)">← Pearson's r</button><button class="btnp" onclick="goTo(5)">Meet Spearman →</button></div>
+</div>
+
+<!-- PAGE 5: SPEARMAN CONCEPT -->
+<div class="page" id="page5">
+  <div class="ptag">🎖️ Stop 5 of 8</div>
+  <h1 class="h1">Meet Spearman: <span>Master of Order</span></h1>
+  <p class="sub">What if your data isn't precise numbers but ranks or ordered categories? Or what if one extreme value is distorting everything? That's where Spearman's rank correlation — written <strong>ρ (rho)</strong> — steps in. Built by Charles Spearman in 1904, it's a clever twist on Pearson: instead of raw values, it works entirely on <strong>ranks</strong> (1st, 2nd, 3rd…).</p>
+
+  <div class="ana"><div class="em">🥇</div><p><strong>The core trick:</strong> Spearman throws away the exact numbers and keeps only the <em>order</em>. It asks a gentler question than Pearson — not "do they move in a straight line?" but "when one goes up, does the other <em>tend</em> to go up too, in <em>any</em> consistent way?" That's called a <strong>monotonic</strong> relationship.</p></div>
+
+  <div class="card">
+    <div class="ctitle">🪄 Watch Raw Values Become Ranks <span class="pill pg">Interactive</span></div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Slide the outlier's value to the extreme. Pearson (raw numbers) lurches around — but Spearman (ranks) barely flinches, because rank order stays the same.</p>
+    <div class="slr">
+      <span class="sll">Move the outlier's Y up</span>
+      <input type="range" class="sli" min="10" max="100" value="20" id="sl_out" oninput="drawRankDemo()">
+      <span class="slv" id="sv_out">20</span>
+    </div>
+    <div class="g2" style="align-items:start">
+      <canvas id="rankCanvas" height="240"></canvas>
+      <div>
+        <div style="background:var(--surf2);border-radius:var(--rs);padding:14px;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--light);margin-bottom:2px">Pearson r (raw values)</div>
+          <div id="rankPearson" class="rgauge" style="font-size:24px;color:var(--rose)">—</div>
+          <div style="font-size:11.5px;color:var(--muted)">Yanked around by the extreme point</div>
+        </div>
+        <div style="background:var(--surf2);border-radius:var(--rs);padding:14px">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--light);margin-bottom:2px">Spearman ρ (ranks)</div>
+          <div id="rankSpearman" class="rgauge" style="font-size:24px;color:var(--green-dark)">—</div>
+          <div style="font-size:11.5px;color:var(--muted)">Rock steady — it only sees order</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">🪜 How Spearman Works — 3 Simple Steps</div>
+    <div class="g3">
+      <div style="background:var(--surf2);border-radius:var(--rs);padding:16px">
+        <div style="font-family:'Cabinet Grotesk';font-weight:800;font-size:20px;color:var(--blue)">1</div>
+        <div style="font-weight:700;font-size:13.5px;margin:4px 0">Rank each variable</div>
+        <p style="font-size:12.5px;color:var(--muted);line-height:1.6">Separately rank X and Y from lowest to highest. Just be consistent.</p>
+      </div>
+      <div style="background:var(--surf2);border-radius:var(--rs);padding:16px">
+        <div style="font-family:'Cabinet Grotesk';font-weight:800;font-size:20px;color:var(--blue)">2</div>
+        <div style="font-weight:700;font-size:13.5px;margin:4px 0">Find rank gaps</div>
+        <p style="font-size:12.5px;color:var(--muted);line-height:1.6">For each pair, subtract the two ranks to get the difference d.</p>
+      </div>
+      <div style="background:var(--surf2);border-radius:var(--rs);padding:16px">
+        <div style="font-family:'Cabinet Grotesk';font-weight:800;font-size:20px;color:var(--blue)">3</div>
+        <div style="font-weight:700;font-size:13.5px;margin:4px 0">Plug into the formula</div>
+        <p style="font-size:12.5px;color:var(--muted);line-height:1.6">Get a value from −1 to +1, read exactly like Pearson's r.</p>
+      </div>
+    </div>
+    <div class="formula">
+      ρ = 1 − <span class="ft-y">6 Σdᵢ²</span> / <span class="ft-b">n(n² − 1)</span>
+    </div>
+    <p style="font-size:13px;color:var(--muted);text-align:center">where <strong>dᵢ</strong> is the rank difference for each pair and <strong>n</strong> is the number of pairs.</p>
+  </div>
+
+  <div class="g3">
+    <div class="card" style="margin-bottom:0">
+      <div style="font-size:24px;margin-bottom:6px">🛡️</div>
+      <div style="font-weight:700;font-size:13.5px;margin-bottom:5px">Robust against outliers</div>
+      <p style="font-size:12.5px;color:var(--muted);line-height:1.6">One student scores 95, another 10? Spearman just calls them rank 1 and rank 5. The huge raw gap can't distort the result.</p>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div style="font-size:24px;margin-bottom:6px">📊</div>
+      <div style="font-weight:700;font-size:13.5px;margin-bottom:5px">Handles ordinal data</div>
+      <p style="font-size:12.5px;color:var(--muted);line-height:1.6">"Strongly agree → agree → neutral…" has order but no fixed spacing. Pearson assumes equal gaps; Spearman doesn't need them.</p>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div style="font-size:24px;margin-bottom:6px">〰️</div>
+      <div style="font-weight:700;font-size:13.5px;margin-bottom:5px">Catches curved trends</div>
+      <p style="font-size:12.5px;color:var(--muted);line-height:1.6">If the pattern always rises but bends (monotonic, not straight), Pearson underrates it — Spearman still reports it strongly.</p>
+    </div>
+  </div>
+
+  <div class="pnav"><button class="btns" onclick="goTo(4)">← Pearson Example</button><button class="btnp" onclick="goTo(6)">Work a Spearman Example →</button></div>
+</div>
+
+<!-- PAGE 6: SPEARMAN WORKED EXAMPLE -->
+<div class="page" id="page6">
+  <div class="ptag">🪜 Stop 6 of 8</div>
+  <h1 class="h1">Spearman by Hand: <span>Experience vs Rating</span></h1>
+  <p class="sub">Now the same by-hand treatment for Spearman. A manager rates six team members on a 1–10 scale. We want to know: does more <strong>years of experience</strong> line up with a <strong>higher satisfaction rating</strong>? The data isn't a perfect straight line and the scale is a subjective rating — a textbook case for ranks.</p>
+
+  <div class="card">
+    <div class="ctitle">📋 The Data <span class="pill pb">6 employees</span></div>
+    <div class="g2" style="align-items:center">
+      <div class="tw" style="margin:0"><table>
+        <tr><th>Employee</th><th>Experience (yrs)</th><th>Rating (1–10)</th></tr>
+        <tr><td>P1</td><td>1</td><td>3</td></tr>
+        <tr><td>P2</td><td>3</td><td>4</td></tr>
+        <tr><td>P3</td><td>5</td><td>6</td></tr>
+        <tr><td>P4</td><td>6</td><td>5</td></tr>
+        <tr><td>P5</td><td>9</td><td>9</td></tr>
+        <tr><td>P6</td><td>11</td><td>10</td></tr>
+      </table></div>
+      <div><canvas id="spearScatter" height="230"></canvas><p style="font-size:12px;color:var(--light);text-align:center;margin-top:6px">Clearly rising, but P3 and P4 swap order slightly — not a perfect line, so ranks are the honest choice.</p></div>
+    </div>
+  </div>
+
+  <div class="exc">
+    <div class="exh"><div class="exnum">1</div><div><div style="font-weight:700;font-size:14.5px;margin-bottom:4px">Rank both columns (lowest = 1)</div><div style="font-size:13px;color:var(--muted);line-height:1.6">Rank experience and rating separately. Least experience gets rank 1; lowest rating gets rank 1, and so on.</div></div></div>
+    <div style="padding:18px 22px">
+      <div class="tw" style="margin:0"><table>
+        <tr><th>Employee</th><th>Rank of X (exp)</th><th>Rank of Y (rating)</th><th>d = Rx − Ry</th><th>d²</th></tr>
+        <tr><td>P1</td><td>1</td><td>1</td><td>0</td><td>0</td></tr>
+        <tr><td>P2</td><td>2</td><td>2</td><td>0</td><td>0</td></tr>
+        <tr><td>P3</td><td>3</td><td>4</td><td>−1</td><td>1</td></tr>
+        <tr><td>P4</td><td>4</td><td>3</td><td>+1</td><td>1</td></tr>
+        <tr><td>P5</td><td>5</td><td>5</td><td>0</td><td>0</td></tr>
+        <tr><td>P6</td><td>6</td><td>6</td><td>0</td><td>0</td></tr>
+        <tr><td><strong>Σ</strong></td><td></td><td></td><td><strong>0</strong></td><td><strong>2</strong></td></tr>
+      </table></div>
+      <p style="font-size:12px;color:var(--light);margin-top:8px">Only P3 and P4 are out of step — a rating swap worth just 1 rank each. Everything else lines up perfectly.</p>
+    </div>
+  </div>
+
+  <div class="exc">
+    <div class="exh"><div class="exnum">2</div><div><div style="font-weight:700;font-size:14.5px;margin-bottom:4px">Sum the squared differences</div><div style="font-size:13px;color:var(--muted);line-height:1.6">Add up the d² column — this is the only number the formula really needs from the data.</div></div></div>
+    <div style="padding:18px 22px">
+      <div class="formula" style="font-size:14px">Σd² = 0 + 0 + 1 + 1 + 0 + 0 = <span class="ft-y">2</span>&nbsp;&nbsp;&nbsp; n = <span class="ft-b">6</span></div>
+    </div>
+  </div>
+
+  <div class="exc">
+    <div class="exh"><div class="exnum">3</div><div><div style="font-weight:700;font-size:14.5px;margin-bottom:4px">Plug into the formula</div><div style="font-size:13px;color:var(--muted);line-height:1.6">Drop Σd² = 2 and n = 6 into Spearman's formula and simplify.</div></div></div>
+    <div style="padding:18px 22px">
+      <div class="formula" style="font-size:14px;line-height:2.4">ρ = 1 − <span class="ft-y">6 × 2</span> / <span class="ft-b">6 × (6² − 1)</span> = 1 − <span class="ft-y">12</span> / <span class="ft-b">6 × 35</span> = 1 − <span class="ft-y">12</span>/<span class="ft-b">210</span> = 1 − 0.0571 ≈ <span class="ft-g" style="font-weight:800">0.943</span></div>
+    </div>
+  </div>
+
+  <div class="ana"><div class="em">🎯</div><p><strong>Interpreting ρ ≈ 0.94:</strong> a very strong positive monotonic relationship. More experienced employees almost always earned higher ratings — the one small swap (P3/P4) barely dents it. Because the rating is a subjective 1–10 scale and the pattern isn't a perfect straight line, Spearman is the more honest measure here than Pearson.</p></div>
+
+  <div class="card">
+    <div class="ctitle">🐍 The Same Result in Python <span class="pill pb">Code</span></div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:6px">One function call replaces the whole ranking table.</p>
+    <div class="cw"><div class="ch"><div class="cdots"><span class="dr"></span><span class="dy"></span><span class="dg"></span></div><span class="clg">python</span></div>
+<pre><span class="kw">from</span> scipy <span class="kw">import</span> stats
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+
+experience = [<span class="nm">1</span>, <span class="nm">3</span>, <span class="nm">5</span>, <span class="nm">6</span>, <span class="nm">9</span>, <span class="nm">11</span>]   <span class="cm"># X: years</span>
+rating     = [<span class="nm">3</span>, <span class="nm">4</span>, <span class="nm">6</span>, <span class="nm">5</span>, <span class="nm">9</span>, <span class="nm">10</span>]  <span class="cm"># Y: 1-10 rating</span>
+
+<span class="cm"># Option 1 — SciPy does the ranking + formula for you</span>
+rho, p_value = stats.spearmanr(experience, rating)
+print(<span class="st">f"Spearman rho = {rho:.3f}"</span>)   <span class="cm"># 0.943</span>
+print(<span class="st">f"p-value      = {p_value:.4f}"</span>) <span class="cm"># 0.0048 → significant</span>
+
+<span class="cm"># Option 2 — see the ranks yourself, then it's just Pearson on ranks</span>
+rank_x = stats.rankdata(experience)   <span class="cm"># [1 2 3 4 5 6]</span>
+rank_y = stats.rankdata(rating)       <span class="cm"># [1 2 4 3 5 6]</span>
+print(<span class="st">"Rank X:"</span>, rank_x)
+print(<span class="st">"Rank Y:"</span>, rank_y)
+d  = rank_x - rank_y
+n  = len(experience)
+rho_by_hand = <span class="nm">1</span> - (<span class="nm">6</span> * np.sum(d**<span class="nm">2</span>)) / (n * (n**<span class="nm">2</span> - <span class="nm">1</span>))
+print(<span class="st">f"By-hand formula = {rho_by_hand:.3f}"</span>)  <span class="cm"># 0.943 — matches!</span>
+
+<span class="cm"># Option 3 — pandas, straight from a DataFrame</span>
+<span class="kw">import</span> pandas <span class="kw">as</span> pd
+df = pd.DataFrame({<span class="st">"exp"</span>: experience, <span class="st">"rating"</span>: rating})
+print(df.corr(method=<span class="st">"spearman"</span>))</pre></div>
+    <button class="rbtn" onclick="toggleOut('outSpear')">▶ Run Demo</button>
+    <div class="rout" id="outSpear">
+      <div class="rl"><span class="rpr">&gt;&gt;&gt;</span>Spearman rho = 0.943</div>
+      <div class="rl"><span class="rpr">&gt;&gt;&gt;</span>p-value      = 0.0048  ← below 0.05, unlikely to be chance</div>
+      <div class="rl"><span class="rpr">&gt;&gt;&gt;</span>Rank X: [1. 2. 3. 4. 5. 6.]</div>
+      <div class="rl"><span class="rpr">&gt;&gt;&gt;</span>Rank Y: [1. 2. 4. 3. 5. 6.]</div>
+      <div class="rl"><span class="rpr">&gt;&gt;&gt;</span>By-hand formula = 0.943</div>
+      <div class="rl" style="color:#67e8f9;margin-top:6px">Hand table (Σd²=2, n=6) and SciPy agree exactly: ρ ≈ 0.943</div>
+    </div>
+  </div>
+
+  <div class="ibox">🧾 <strong>Handy note on ties:</strong> the simple <code>1 − 6Σd²/n(n²−1)</code> formula assumes no tied values. When ranks tie, assign each the <em>average</em> of the positions they'd occupy — which is exactly what <code>scipy.stats.spearmanr</code> does automatically, so it stays correct even with ties.</div>
+
+  <div class="pnav"><button class="btns" onclick="goTo(5)">← Spearman's ρ</button><button class="btnp" onclick="goTo(7)">Which Tool? →</button></div>
+</div>
+
+<!-- PAGE 7: WHICH TOOL -->
+<div class="page" id="page7">
+  <div class="ptag">🧰 Stop 7 of 8</div>
+  <h1 class="h1">Pearson or Spearman? <span>Choosing Your Tool</span></h1>
+  <p class="sub">The most common beginner question: "which one do I use?" The good news — it follows a clear logic. Think of Pearson as a <strong>precision instrument</strong> (superb when conditions are right) and Spearman as a <strong>versatile multi-tool</strong> that keeps working in messier situations.</p>
+
+  <div class="card">
+    <div class="ctitle">🤖 Tool Picker <span class="pill pg">Interactive</span></div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Answer these three questions about your data and get an instant recommendation.</p>
+    <div id="pickQ"></div>
+    <div id="pickResult" style="margin-top:14px"></div>
+  </div>
+
+  <div class="g2">
+    <div class="card" style="margin-bottom:0;border-top:3px solid var(--green)">
+      <div class="ctitle" style="color:var(--green-dark)">✅ Reach for Pearson when…</div>
+      <ul style="font-size:13px;line-height:1.9;color:var(--text);padding-left:18px;margin-top:6px">
+        <li>Both variables are <strong>continuous numbers</strong> (height in cm, temperature in °C).</li>
+        <li>The scatter looks roughly <strong>straight</strong> when you plot it.</li>
+        <li>There are <strong>no wild outliers</strong> yanking the average around.</li>
+        <li>Both are roughly <strong>bell-shaped</strong> (normally distributed).</li>
+      </ul>
+      <div class="sbox" style="margin-bottom:0">Example: height vs weight in a sample of adults.</div>
+    </div>
+    <div class="card" style="margin-bottom:0;border-top:3px solid var(--violet)">
+      <div class="ctitle" style="color:var(--violet)">✅ Reach for Spearman when…</div>
+      <ul style="font-size:13px;line-height:1.9;color:var(--text);padding-left:18px;margin-top:6px">
+        <li>Your data is <strong>ordinal</strong> — ranks, ordered categories, or Likert (1–5) scales.</li>
+        <li>The trend is <strong>monotonic but curved</strong> (always up or down, not straight).</li>
+        <li>You have <strong>outliers</strong> you suspect could skew Pearson.</li>
+        <li>The data <strong>isn't bell-shaped</strong> enough for Pearson's assumptions.</li>
+      </ul>
+      <div class="vbox" style="margin-bottom:0">Example: satisfaction rating (1–5 stars) vs number of repeat purchases.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">🏅 The Golden Rule of Thumb — 4 Checks</div>
+    <div class="tw"><table>
+      <tr><th>#</th><th>Check</th><th>What to do</th></tr>
+      <tr><td>1</td><td><strong>Plot first</strong></td><td>Always draw the scatterplot before calculating anything. Your eyes are your best diagnostic tool.</td></tr>
+      <tr><td>2</td><td><strong>Look for outliers</strong></td><td>Points sitting far from the main cluster? Lean towards Spearman.</td></tr>
+      <tr><td>3</td><td><strong>Check the shape</strong></td><td>Curved rather than straight? Spearman is the safer, more honest choice.</td></tr>
+      <tr><td>4</td><td><strong>Check the data type</strong></td><td>Ranked / ordinal data → always Spearman. Clean continuous numbers with no curve → Pearson is fine.</td></tr>
+    </table></div>
+  </div>
+
+  <div class="pnav"><button class="btns" onclick="goTo(6)">← Spearman Example</button><button class="btnp" onclick="goTo(8)">The Causation Trap →</button></div>
+</div>
+
+<!-- PAGE 8: CORRELATION VS CAUSATION -->
+<div class="page" id="page8">
+  <div class="ptag">🍦 Stop 8 of 8</div>
+  <h1 class="h1">The Correlation ≠ <span>Causation Trap</span></h1>
+  <p class="sub">Perhaps the single most important lesson in all of applied statistics: <strong>correlation does not imply causation</strong>. It's repeated so often because it's broken so often — in headlines, in business decisions, in everyday chat. Understanding this trap is what separates a careful thinker from a credulous one.</p>
+
+  <div class="card">
+    <div class="ctitle">🍦 The Famous Case: Ice Cream & Drowning <span class="pill po">Interactive</span></div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Researchers found that on days when ice cream sales are high, drowning incidents are <em>also</em> high — a genuinely positive, significant correlation. So does ice cream cause drowning? Click the button to reveal the hidden culprit.</p>
+    <div class="scenmap">
+      <div class="scen-node" style="border-color:var(--orange)"><div class="scen-ico" style="background:var(--orange)">🍦</div>Ice cream sales rise</div>
+      <div class="scen-arrow">↕ correlated, but neither causes the other</div>
+      <div class="scen-node" style="border-color:var(--blue)"><div class="scen-ico" style="background:var(--blue)">🏊</div>Drowning incidents rise</div>
+    </div>
+    <div style="text-align:center;margin:16px 0"><button class="rbtn" onclick="revealConfounder()" id="confBtn">🔍 Reveal the hidden variable</button></div>
+    <div id="confReveal" style="display:none">
+      <div class="scenmap">
+        <div class="scen-node" style="border-color:var(--rose);background:linear-gradient(135deg,#fff1f2,#fff)"><div class="scen-ico" style="background:var(--rose)">☀️</div><strong>Hot weather</strong> — the true driver, silently causing BOTH</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="scen-node" style="border-color:var(--orange)"><div class="scen-ico" style="background:var(--orange)">🍦</div>People buy ice cream to cool down</div>
+          <div class="scen-node" style="border-color:var(--blue)"><div class="scen-ico" style="background:var(--blue)">🏊</div>People swim more → more accidents</div>
+        </div>
+      </div>
+      <div class="wbox" style="margin-top:14px">☀️ The hidden variable driving both is called a <strong>confounder</strong>. Remove hot weather and the ice-cream–drowning link vanishes. Always hunt for the confounder <em>before</em> drawing conclusions.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">🔀 Three Explanations for ANY Correlation</div>
+    <div class="g3">
+      <div style="background:linear-gradient(135deg,#f0fdf4,#eff6ff);border-radius:var(--rs);padding:16px">
+        <div style="font-weight:800;color:var(--green-dark);margin-bottom:5px">1 · X causes Y</div>
+        <p style="font-size:12.5px;color:var(--muted);line-height:1.6">The straightforward story — studying really does cause better grades. But only a controlled experiment can confirm it.</p>
+      </div>
+      <div style="background:linear-gradient(135deg,#fff7ed,#fef2f2);border-radius:var(--rs);padding:16px">
+        <div style="font-weight:800;color:var(--orange);margin-bottom:5px">2 · Y causes X</div>
+        <p style="font-size:12.5px;color:var(--muted);line-height:1.6">Reverse causation. Happy people exercise more — or does exercising make people happier? Direction matters enormously.</p>
+      </div>
+      <div style="background:linear-gradient(135deg,#faf5ff,#eff6ff);border-radius:var(--rs);padding:16px">
+        <div style="font-weight:800;color:var(--violet);margin-bottom:5px">3 · Hidden Z causes both</div>
+        <p style="font-size:12.5px;color:var(--muted);line-height:1.6">A confounder drives X and Y independently — the ice-cream case. Remove Z and the correlation disappears.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">🤡 Spurious Correlations — Real Data, Zero Meaning</div>
+    <div class="g2">
+      <div class="ibox" style="margin:0">🎬 <strong>Nicolas Cage films vs pool drownings.</strong> The yearly count of Nicolas Cage movie releases tracks pool-drowning deaths closely. Pure coincidence — a classic spurious correlation with no mechanism.</div>
+      <div class="ibox" style="margin:0">🧀 <strong>Cheese vs bedsheet tangles.</strong> US per-capita cheese consumption correlates strongly with the number of people who die tangled in their bedsheets. No mechanism exists — it's noise dressed up as a pattern.</div>
+    </div>
+    <div class="sbox">🧭 <strong>The detective's question:</strong> before believing any link, ask — <em>"What is the plausible mechanism by which X could actually change Y?"</em> No believable mechanism → treat it as coincidence, not cause.</div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">✅ The Skeptic's Checklist — Use Every Time</div>
+    <div class="rv-grid">
+      <div class="rv" onclick="this.classList.toggle('fl')"><div class="fr">📈</div><div class="ft">Plot first</div><div class="rvh">Click to reveal</div><div class="bk">Draw the scatterplot before any maths. It reveals outliers, curves, and clusters a single number like r can never show.</div></div>
+      <div class="rv" onclick="this.classList.toggle('fl')"><div class="fr">⚙️</div><div class="ft">Is there a mechanism?</div><div class="rvh">Click to reveal</div><div class="bk">Ask exactly how a change in X would produce a change in Y. If you can't name a plausible reason, stay skeptical.</div></div>
+      <div class="rv" onclick="this.classList.toggle('fl')"><div class="fr">🕵️</div><div class="ft">Hunt the third variable</div><div class="rvh">Click to reveal</div><div class="bk">Could a confounder be driving both X and Y? Think about what else changes at the same time as X.</div></div>
+      <div class="rv" onclick="this.classList.toggle('fl')"><div class="fr">🔢</div><div class="ft">Check sample size</div><div class="rvh">Click to reveal</div><div class="bk">A strong correlation from 4–5 people means little. Small samples wobble randomly — what looks like a trend may be noise.</div></div>
+      <div class="rv" onclick="this.classList.toggle('fl')"><div class="fr">↩️</div><div class="ft">Consider reverse causation</div><div class="rvh">Click to reveal</div><div class="bk">Could Y be causing X instead? Randomised controlled experiments are the gold standard for settling direction.</div></div>
+    </div>
+  </div>
+
+  <div class="ana"><div class="em">📜</div><p><strong>The mindset to keep:</strong> "Data does not tell a story on its own — it asks a question." A correlation is the beginning of an investigation, never the end. Use it as a signpost, not a verdict. When you see "X is linked to Y," your automatic questions become: How strong? How big was the sample? Is there a mechanism? Any confounder? Could the direction be reversed?</p></div>
+
+  <div class="pnav"><button class="btns" onclick="goTo(7)">← Which Tool?</button><button class="btnp" onclick="goTo(9)">Take the Quiz →</button></div>
+</div>
+
+<!-- PAGE 9: QUIZ -->
+<div class="page" id="page9">
+  <div class="ptag">🧩 Knowledge Check</div>
+  <h1 class="h1">Correlation <span>Quiz</span></h1>
+  <p class="sub">8 questions across everything you've investigated — intuition, Pearson, Spearman, tool choice, and the causation trap. Think like a detective!</p>
+  <div id="qz-wrap">
+    <div class="qdots" id="qdots-wrap"></div>
+    <div class="qzc">
+      <div class="qn" id="qnum">Question 1 of 8</div>
+      <div class="qq" id="qtext"></div>
+      <div class="qopts" id="qopts"></div>
+      <div class="qfb" id="qfb"></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:18px">
+        <button class="btnp" id="qnext" style="display:none" onclick="nextQ()">Next →</button>
+      </div>
+    </div>
+  </div>
+  <div class="scwrap" id="scoreScr" style="display:none">
+    <div class="scring"><div class="scn" id="scNum">0</div><div class="scd">/ 8</div></div>
+    <h2 style="font-family:'Cabinet Grotesk',sans-serif;font-size:30px;font-weight:800;margin-bottom:10px" id="scMsg"></h2>
+    <p style="font-size:15px;color:var(--muted);margin-bottom:28px" id="scDet"></p>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+      <button class="btns" onclick="restartQuiz()">Retake Quiz</button>
+      <button class="btnp" onclick="goTo(10)">Finish Module 🎉</button>
+    </div>
+  </div>
+  <div class="pnav"><button class="btns" onclick="goTo(8)">← Causation Trap</button><div></div></div>
+</div>
+
+<!-- PAGE 10: COMPLETION -->
+<div class="page" id="page10">
+  <div class="cmpw">
+    <span class="cmpe">🔍</span>
+    <h1 style="font-family:'Cabinet Grotesk',sans-serif;font-size:38px;font-weight:800;margin-bottom:10px">Case Closed!</h1>
+    <p style="font-size:17px;color:var(--muted);margin-bottom:6px">The Correlation Detective — Complete</p>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:32px;max-width:520px;margin-left:auto;margin-right:auto">You can now measure how two things move together, pick Pearson or Spearman with confidence, and — most importantly — resist the temptation to mistake a coincidence for a cause.</p>
+    <div class="skw">
+      <div class="sk">🔗 Positive / Negative / Zero</div><div class="sk">🎮 Reading scatter plots</div><div class="sk">👑 Pearson's r by hand</div>
+      <div class="sk">🎖️ Spearman's ρ by hand</div><div class="sk">🐍 scipy & pandas</div><div class="sk">🧰 Tool selection</div>
+      <div class="sk">🍦 Confounders</div><div class="sk">🤡 Spurious correlations</div><div class="sk">↩️ Reverse causation</div>
+    </div>
+    <div class="card" style="max-width:460px;margin:0 auto 28px;text-align:left">
+      <div class="ctitle">🏅 Your Detective's Toolkit</div>
+      <div style="display:flex;align-items:center;gap:14px;padding:11px;background:linear-gradient(135deg,#f0fdf4,#eff6ff);border-radius:var(--rs)">
+        <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--green),var(--blue));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🔍</div>
+        <div>
+          <div style="font-weight:700;font-size:14px">Correlation & Causation</div>
+          <div style="margin-top:5px;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:var(--green);color:#fff;border-radius:99px;font-size:11px;font-weight:700">✓ Module Complete</div>
+        </div>
+      </div>
+    </div>
+    <div class="vbox" style="max-width:520px;margin:0 auto 28px;text-align:left">💬 <em>"The goal of science is not to open a door to infinite wisdom, but to set a limit to infinite error."</em> — Bertolt Brecht. Remember: a correlation is a signpost, not a verdict.</div>
+    <button class="btnp" style="font-size:15px;padding:13px 30px" onclick="restartModule()">↺ Restart Module</button>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script>
+// ─────────── NAVIGATION ───────────
+const TOTAL=11; let curPage=0; const visited=new Set([0]);
+function goTo(idx){
+  const cur=document.getElementById('page'+curPage);
+  if(cur){cur.style.display='none';cur.classList.remove('active');}
+  document.getElementById('nav'+curPage).classList.remove('on');
+  visited.add(curPage);
+  const nav=document.getElementById('nav'+curPage);
+  if(!nav.querySelector('.db')){const b=document.createElement('span');b.className='db';b.textContent='✓';nav.appendChild(b);}
+  curPage=idx;
+  const nxt=document.getElementById('page'+idx);
+  if(nxt){nxt.style.display='block';nxt.classList.add('active');nxt.style.animation='none';void nxt.offsetWidth;nxt.style.animation='fadeSlide .4s ease';}
+  document.getElementById('nav'+idx).classList.add('on');
+  document.querySelector('.main-content').scrollTo(0,0);
+  const pct=Math.round((visited.size/TOTAL)*100);
+  document.getElementById('nfill').style.width=pct+'%';
+  document.getElementById('npct').textContent=pct+'%';
+  const inits={1:initFlav,2:initLab,3:initSetR,4:initPearsonEx,5:initRankDemo,6:initSpearEx,7:initPicker};
+  if(inits[idx]) setTimeout(inits[idx],120);
+}
+function toggleOut(id){document.getElementById(id).classList.toggle('show');}
+
+// ─────────── SHARED HELPERS ───────────
+function fitCanvas(cv){
+  const w=cv.parentElement.clientWidth;
+  cv.width=w; // height set in HTML attr
+  return cv.getContext('2d');
+}
+function pearson(xs,ys){
+  const n=xs.length;const mx=xs.reduce((a,b)=>a+b,0)/n;const my=ys.reduce((a,b)=>a+b,0)/n;
+  let num=0,dx=0,dy=0;
+  for(let i=0;i<n;i++){num+=(xs[i]-mx)*(ys[i]-my);dx+=(xs[i]-mx)**2;dy+=(ys[i]-my)**2;}
+  if(dx===0||dy===0) return 0;
+  return num/Math.sqrt(dx*dy);
+}
+function rankOf(arr){
+  const idx=arr.map((v,i)=>[v,i]).sort((a,b)=>a[0]-b[0]);
+  const ranks=new Array(arr.length);
+  let i=0;
+  while(i<idx.length){
+    let j=i; while(j+1<idx.length && idx[j+1][0]===idx[i][0]) j++;
+    const avg=(i+j)/2+1;
+    for(let k=i;k<=j;k++) ranks[idx[k][1]]=avg;
+    i=j+1;
+  }
+  return ranks;
+}
+function spearman(xs,ys){return pearson(rankOf(xs),rankOf(ys));}
+function strengthLabel(r){
+  const a=Math.abs(r);
+  if(a>=0.7) return {t:(r>0?'Strong positive':'Strong negative'),c:'var(--green-dark)'};
+  if(a>=0.4) return {t:(r>0?'Moderate positive':'Moderate negative'),c:'var(--amber)'};
+  if(a>=0.15) return {t:(r>0?'Weak positive':'Weak negative'),c:'var(--rose)'};
+  return {t:'No / negligible link',c:'var(--muted)'};
+}
+// generic scatter draw. pts in data coords 0..1; padding etc handled.
+function drawScatter(ctx,cv,pts,opts={}){
+  const W=cv.width,H=cv.height,pad=26;
+  ctx.clearRect(0,0,W,H);
+  // axes
+  ctx.strokeStyle='#cbd5e1';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(pad,pad-6);ctx.lineTo(pad,H-pad);ctx.lineTo(W-pad+6,H-pad);ctx.stroke();
+  // trend line
+  if(opts.trend){
+    ctx.strokeStyle=opts.trendColor||'rgba(59,130,246,.5)';ctx.lineWidth=2;ctx.setLineDash([6,5]);
+    ctx.beginPath();
+    const x1=pad,x2=W-pad,y1=(H-pad)-opts.trend(0)*(H-2*pad),y2=(H-pad)-opts.trend(1)*(H-2*pad);
+    ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.setLineDash([]);
+  }
+  pts.forEach(p=>{
+    const x=pad+p[0]*(W-2*pad), y=(H-pad)-p[1]*(H-2*pad);
+    ctx.beginPath();ctx.arc(x,y,opts.r||4.5,0,7);
+    ctx.fillStyle=opts.color||'#3b82f6';ctx.globalAlpha=opts.alpha||0.85;ctx.fill();ctx.globalAlpha=1;
+    if(opts.stroke){ctx.strokeStyle='#fff';ctx.lineWidth=1.3;ctx.stroke();}
+  });
+  if(opts.xlabel){ctx.fillStyle='#94a3b8';ctx.font='11px Nunito';ctx.fillText(opts.xlabel,W-pad-ctx.measureText(opts.xlabel).width,H-8);}
+  if(opts.ylabel){ctx.save();ctx.translate(11,pad+4);ctx.rotate(-Math.PI/2);ctx.fillStyle='#94a3b8';ctx.font='11px Nunito';ctx.fillText(opts.ylabel,-ctx.measureText(opts.ylabel).width,0);ctx.restore();}
+}
+// seeded rng for reproducibility
+function mulberry(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+
+// ─────────── PAGE 1: FLAVOURS ───────────
+let flavMode='pos';
+function initFlav(){selFlav('pos',document.querySelector('#flavTog .ctog'));}
+function selFlav(m,btn){
+  flavMode=m;
+  document.querySelectorAll('#flavTog .ctog').forEach(b=>b.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+  const cv=document.getElementById('flavCanvas');const ctx=fitCanvas(cv);
+  const rng=mulberry(7);const pts=[];
+  for(let i=0;i<24;i++){
+    const x=rng();let y;
+    if(m==='pos') y=x*0.85+0.08+(rng()-0.5)*0.22;
+    else if(m==='neg') y=(1-x)*0.85+0.08+(rng()-0.5)*0.22;
+    else y=rng()*0.9+0.05;
+    pts.push([x,Math.max(0.02,Math.min(0.98,y))]);
+  }
+  const r=pearson(pts.map(p=>p[0]),pts.map(p=>p[1]));
+  const cols={pos:'#22c55e',neg:'#e11d48',zero:'#94a3b8'};
+  drawScatter(ctx,cv,pts,{color:cols[m],stroke:true,xlabel:'Variable X →',ylabel:'Variable Y →'});
+  const info={
+    pos:{h:'📈 Positive Correlation',b:'The cloud slopes <strong>uphill</strong> ↗. As X rises, Y rises too — they move in the same direction. Think hours studied vs exam score.',c:'var(--green-dark)'},
+    neg:{h:'📉 Negative Correlation',b:'The cloud slopes <strong>downhill</strong> ↘. As X rises, Y falls — an inverse relationship. Think driving speed vs journey time.',c:'var(--rose)'},
+    zero:{h:'↔️ Zero Correlation',b:'A shapeless <strong>blob</strong> with no tilt. Knowing X tells you nothing about Y. Think shoe size vs exam score.',c:'var(--muted)'}
+  }[m];
+  document.getElementById('flavInfo').innerHTML=
+    `<div style="font-weight:800;font-size:16px;color:${info.c};margin-bottom:8px">${info.h}</div>`+
+    `<p style="font-size:13.5px;line-height:1.7;color:var(--text);margin-bottom:12px">${info.b}</p>`+
+    `<div style="background:var(--surf2);border-radius:10px;padding:12px;text-align:center"><div style="font-size:11px;color:var(--light);font-weight:700;text-transform:uppercase;letter-spacing:1px">Measured r ≈</div><div style="font-family:Fira Code;font-weight:800;font-size:24px;color:${info.c}">${r.toFixed(2)}</div></div>`;
+}
+
+// ─────────── PAGE 2: PLAYGROUND ───────────
+let shapeMode='linpos';
+function initLab(){selShape('linpos',document.querySelector('#shapeTog .ctog'));buildGuess();}
+function selShape(m,btn){
+  shapeMode=m;
+  document.querySelectorAll('#shapeTog .ctog').forEach(b=>b.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+  drawPlayground();
+}
+function drawPlayground(){
+  const noise=+document.getElementById('sl_noise').value;
+  document.getElementById('sv_noise').textContent=noise+'%';
+  const cv=document.getElementById('playCanvas');const ctx=fitCanvas(cv);
+  const rng=mulberry(42);const n=40;const pts=[];const nf=noise/100;
+  for(let i=0;i<n;i++){
+    const x=rng();let base;
+    if(shapeMode==='linpos') base=x*0.82+0.09;
+    else if(shapeMode==='linneg') base=(1-x)*0.82+0.09;
+    else if(shapeMode==='curve') base=1-4*Math.pow(x-0.5,2)*0.9-0.02; // ∩ inverted... use ∪
+    else base=0.5;
+    if(shapeMode==='curve') base=4*Math.pow(x-0.5,2)*0.85+0.08; // ∪ shape
+    let y;
+    if(shapeMode==='none') y=rng();
+    else y=base+(rng()-0.5)*(nf*1.4+0.02);
+    pts.push([x,Math.max(0.02,Math.min(0.98,y))]);
+  }
+  const r=pearson(pts.map(p=>p[0]),pts.map(p=>p[1]));
+  drawScatter(ctx,cv,pts,{color:'#6366f1',stroke:true,r:4,xlabel:'X →',ylabel:'Y →'});
+  const sl=strengthLabel(r);
+  document.getElementById('playR').textContent=r.toFixed(2);
+  document.getElementById('playR').style.color=sl.c;
+  document.getElementById('playStrength').textContent=sl.t;
+  document.getElementById('playStrength').style.color=sl.c;
+  let msg;
+  if(shapeMode==='curve') msg='🌀 <strong>Look closely!</strong> The dots form an obvious ∪ curve — a real, strong relationship — yet r stays near zero. Pearson is blind to curves. Your eyes beat the number here.';
+  else if(shapeMode==='none') msg='☁️ Pure noise. No matter the slider, r hovers near 0 because there is genuinely no pattern to find.';
+  else if(Math.abs(r)>0.7) msg='✅ Tight, straight cloud → strong r. This is exactly the situation Pearson was built for.';
+  else if(Math.abs(r)>0.4) msg='🔸 As noise grows, the line blurs and r drifts toward the moderate range. The trend is still there, just weaker.';
+  else msg='⚠️ So much noise that the straight-line signal is nearly buried. r has fallen into the weak zone.';
+  document.getElementById('playInsight').innerHTML=msg;
+}
+// Guess-the-r mini game
+const guessSets=[{seed:11,type:'linpos'},{seed:22,type:'linneg'},{seed:33,type:'weak'},{seed:44,type:'none'}];
+function makePts(seed,type){
+  const rng=mulberry(seed);const pts=[];
+  for(let i=0;i<26;i++){const x=rng();let y;
+    if(type==='linpos')y=x*0.8+0.1+(rng()-0.5)*0.18;
+    else if(type==='linneg')y=(1-x)*0.8+0.1+(rng()-0.5)*0.18;
+    else if(type==='weak')y=x*0.45+0.28+(rng()-0.5)*0.55;
+    else y=rng();
+    pts.push([x,Math.max(0.02,Math.min(0.98,y))]);}
+  return pts;
+}
+function buildGuess(){
+  const wrap=document.getElementById('guessWrap');if(!wrap)return;
+  wrap.innerHTML='<div class="g2" id="guessGrid"></div><div id="guessMsg" style="margin-top:10px"></div>';
+  const grid=document.getElementById('guessGrid');
+  const set=guessSets[Math.floor(Math.random()*guessSets.length)];
+  const pts=makePts(set.seed+Math.floor(Math.random()*100),set.type);
+  const r=pearson(pts.map(p=>p[0]),pts.map(p=>p[1]));
+  const cvWrap=document.createElement('div');cvWrap.innerHTML='<canvas id="guessCv" height="220"></canvas>';
+  grid.appendChild(cvWrap);
+  const optWrap=document.createElement('div');
+  // build 4 options around true r
+  const opts=new Set([Math.round(r*10)/10]);
+  while(opts.size<4){const cand=Math.round((Math.random()*2-1)*10)/10;if(Math.abs(cand-r)>0.15)opts.add(cand);}
+  const optArr=[...opts].sort(()=>Math.random()-0.5);
+  optWrap.innerHTML='<div style="font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:600">Which r matches this scatter?</div>'+
+    '<div class="cb-toggle" style="flex-direction:column;align-items:stretch">'+
+    optArr.map(o=>`<button class="ctog" style="text-align:center" onclick="checkGuess(${o},${r.toFixed(3)},this)">r ≈ ${o.toFixed(1)}</button>`).join('')+
+    '</div>';
+  grid.appendChild(optWrap);
+  const ctx=fitCanvas(document.getElementById('guessCv'));
+  drawScatter(ctx,document.getElementById('guessCv'),pts,{color:'#7c3aed',stroke:true,r:4});
+}
+function checkGuess(picked,actual,btn){
+  const close=Math.abs(picked-actual)<0.16;
+  document.querySelectorAll('#guessGrid .ctog').forEach(b=>b.style.pointerEvents='none');
+  btn.style.background=close?'linear-gradient(135deg,#f0fdf4,#eff6ff)':'#fef2f2';
+  btn.style.borderColor=close?'var(--green)':'var(--rose)';
+  btn.style.color=close?'var(--green-dark)':'var(--rose)';
+  document.getElementById('guessMsg').innerHTML=close
+    ?`<div class="sbox" style="margin:0">🎯 Nice eye! The true value was r ≈ ${actual.toFixed(2)}. <button class="rbtn" style="margin-top:8px" onclick="buildGuess()">Next scatter →</button></div>`
+    :`<div class="wbox" style="margin:0">Close but not quite — the true value was r ≈ ${actual.toFixed(2)}. Keep training your eye! <button class="rbtn" style="margin-top:8px" onclick="buildGuess()">Try another →</button></div>`;
+}
+
+// ─────────── PAGE 3: SET-R ───────────
+function initSetR(){drawSetR();}
+function drawSetR(){
+  const target=+document.getElementById('sl_setr').value/100;
+  document.getElementById('sv_setr').textContent=(target>=0?'+':'')+target.toFixed(2);
+  const cv=document.getElementById('setrCanvas');const ctx=fitCanvas(cv);
+  // generate points with approx target correlation
+  const rng=mulberry(99);const n=45;const xs=[],ys=[];
+  for(let i=0;i<n;i++){const x=rng();const noise=rng()*2-1;
+    const y=target*(x-0.5)*2 + Math.sqrt(Math.max(0,1-target*target))*noise;
+    xs.push(x);ys.push(y);}
+  // normalize ys to 0..1
+  const mn=Math.min(...ys),mx=Math.max(...ys);
+  const pts=xs.map((x,i)=>[x,0.05+0.9*(ys[i]-mn)/(mx-mn||1)]);
+  const actual=pearson(xs,ys);
+  const col=target>0?'#22c55e':(target<0?'#e11d48':'#94a3b8');
+  drawScatter(ctx,cv,pts,{color:col,stroke:true,r:4,
+    trend:(target!==0?(t=>{const yy=target*(t-0.5)*2;return 0.5+yy*0.42;}):null),trendColor:col+'99',
+    xlabel:'X →',ylabel:'Y →'});
+  const sl=strengthLabel(target);
+  document.getElementById('setrInfo').innerHTML=
+    `<div class="rgauge" style="color:${col}">r = ${(target>=0?'+':'')}${target.toFixed(2)}</div>`+
+    `<div style="text-align:center;font-weight:700;color:${sl.c};margin-bottom:14px">${sl.t}</div>`+
+    `<div class="ibox" style="margin:0">${target>0.9?'Almost every point hugs the upward line — this is what a <strong>strong positive</strong> looks like.':target<-0.9?'Points hug the downward line — a <strong>strong negative</strong>.':Math.abs(target)<0.15?'No tilt at all — the dots are a formless cloud. This is <strong>r ≈ 0</strong>.':'A visible tilt, but the cloud has real thickness — that spread is exactly what pulls |r| away from 1.'}</div>`;
+}
+
+// ─────────── PAGE 4: PEARSON SCATTER ───────────
+function initPearsonEx(){
+  const cv=document.getElementById('pearsonScatter');if(!cv)return;const ctx=fitCanvas(cv);
+  const X=[1,2,3,4,5],Y=[50,60,65,75,85];
+  const pts=X.map((x,i)=>[(x-1)/4,(Y[i]-45)/45]);
+  drawScatter(ctx,cv,pts,{color:'#22c55e',stroke:true,r:6,
+    trend:(t=>{return (( (t*4+1)*8.5+41 )-45)/45;}),trendColor:'#16a34a88',
+    xlabel:'Hours studied →',ylabel:'Exam score →'});
+}
+
+// ─────────── PAGE 5: RANK DEMO ───────────
+function initRankDemo(){drawRankDemo();}
+function drawRankDemo(){
+  const outY=+document.getElementById('sl_out').value;
+  document.getElementById('sv_out').textContent=outY;
+  // base data: 6 rising points, last one's Y is the slider (outlier)
+  const X=[1,2,3,4,5,6];
+  const Y=[12,20,26,33,40,outY];
+  const cv=document.getElementById('rankCanvas');const ctx=fitCanvas(cv);
+  const ymax=Math.max(...Y),ymin=Math.min(...Y);
+  const pts=X.map((x,i)=>[(x-1)/5,0.05+0.9*(Y[i]-ymin)/(ymax-ymin||1)]);
+  // color outlier differently
+  const W=cv.width,H=cv.height,pad=26;ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='#cbd5e1';ctx.beginPath();ctx.moveTo(pad,pad-6);ctx.lineTo(pad,H-pad);ctx.lineTo(W-pad+6,H-pad);ctx.stroke();
+  pts.forEach((p,i)=>{const x=pad+p[0]*(W-2*pad),y=(H-pad)-p[1]*(H-2*pad);
+    ctx.beginPath();ctx.arc(x,y,i===5?7:5,0,7);
+    ctx.fillStyle=i===5?'#e11d48':'#3b82f6';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.3;ctx.stroke();});
+  ctx.fillStyle='#94a3b8';ctx.font='11px Nunito';ctx.fillText('X →',W-pad-16,H-8);
+  ctx.fillStyle='#e11d48';ctx.font='700 11px Nunito';ctx.fillText('← outlier',pad+pts[5][0]*(W-2*pad)-52,(H-pad)-pts[5][1]*(H-2*pad)-10);
+  const rP=pearson(X,Y),rS=spearman(X,Y);
+  document.getElementById('rankPearson').textContent=rP.toFixed(3);
+  document.getElementById('rankSpearman').textContent=rS.toFixed(3);
+}
+
+// ─────────── PAGE 6: SPEARMAN SCATTER ───────────
+function initSpearEx(){
+  const cv=document.getElementById('spearScatter');if(!cv)return;const ctx=fitCanvas(cv);
+  const X=[1,3,5,6,9,11],Y=[3,4,6,5,9,10];
+  const xmax=11,ymax=10;
+  const pts=X.map((x,i)=>[(x-0)/12,(Y[i]-1)/10]);
+  drawScatter(ctx,cv,pts,{color:'#7c3aed',stroke:true,r:6,
+    xlabel:'Experience (yrs) →',ylabel:'Rating →'});
+}
+
+// ─────────── PAGE 7: TOOL PICKER ───────────
+const pickState={dtype:null,shape:null,outlier:null};
+function initPicker(){
+  const q=document.getElementById('pickQ');
+  q.innerHTML=`
+  <div style="margin-bottom:14px"><div style="font-weight:700;font-size:13.5px;margin-bottom:8px">1 · What kind of data are your two variables?</div>
+    <div class="cb-toggle"><button class="ctog" onclick="setPick('dtype','cont',this)">Continuous numbers (cm, °C, ₹)</button><button class="ctog" onclick="setPick('dtype','ord',this)">Ranks / ratings / ordered categories</button></div></div>
+  <div style="margin-bottom:14px"><div style="font-weight:700;font-size:13.5px;margin-bottom:8px">2 · On a scatterplot, the trend looks…</div>
+    <div class="cb-toggle"><button class="ctog" onclick="setPick('shape','straight',this)">Roughly a straight line</button><button class="ctog" onclick="setPick('shape','curve',this)">Rising/falling but curved</button></div></div>
+  <div><div style="font-weight:700;font-size:13.5px;margin-bottom:8px">3 · Any extreme outliers far from the cluster?</div>
+    <div class="cb-toggle"><button class="ctog" onclick="setPick('outlier','no',this)">No, points are tidy</button><button class="ctog" onclick="setPick('outlier','yes',this)">Yes, at least one</button></div></div>`;
+  document.getElementById('pickResult').innerHTML='';
+  pickState.dtype=pickState.shape=pickState.outlier=null;
+}
+function setPick(k,v,btn){
+  pickState[k]=v;
+  btn.parentElement.querySelectorAll('.ctog').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  if(pickState.dtype&&pickState.shape&&pickState.outlier){
+    const usePearson=(pickState.dtype==='cont'&&pickState.shape==='straight'&&pickState.outlier==='no');
+    const res=document.getElementById('pickResult');
+    if(usePearson){
+      res.innerHTML='<div class="sbox" style="margin:0"><strong>👑 Use Pearson\'s r.</strong> Your data is continuous, roughly straight, and outlier-free — the ideal conditions for Pearson\'s precision. It will give you the tightest, most informative measure of the linear link.</div>';
+    }else{
+      const reasons=[];
+      if(pickState.dtype==='ord')reasons.push('your data is ordinal/ranked (Pearson assumes equal-spaced numbers)');
+      if(pickState.shape==='curve')reasons.push('the trend is curved, not straight (Pearson would underrate it)');
+      if(pickState.outlier==='yes')reasons.push('an outlier is present (it could distort Pearson\'s average)');
+      res.innerHTML='<div class="vbox" style="margin:0"><strong>🎖️ Use Spearman\'s ρ.</strong> Because '+reasons.join(', and ')+'. Spearman works on ranks, so it sidesteps all of these and still captures the monotonic relationship honestly.</div>';
+    }
+  }
+}
+
+// ─────────── QUIZ ───────────
+const questions=[
+  {q:'A scatterplot of driving speed vs journey time slopes clearly downhill. What kind of correlation is this?',
+   opts:['Positive correlation','Negative correlation','Zero correlation','It cannot be determined from a scatterplot'],
+   correct:1,
+   fbOk:'Correct! As one variable (speed) goes up, the other (time) goes down — an inverse, downhill pattern. That is a negative correlation, and its r would be somewhere between 0 and −1.',
+   fbNg:'Not quite. When one variable rises as the other falls (a downhill cloud), that is a negative correlation. The r value would be negative.'},
+  {q:'Pearson\'s r for a dataset comes out at exactly 0.02, yet the scatterplot shows a beautiful, tight ∪-shaped curve. What is going on?',
+   opts:['The data has no relationship at all','There is a strong relationship, but it is non-linear, and Pearson only detects straight lines','You made a calculation error — r must be near ±1','The sample size is too large'],
+   correct:1,
+   fbOk:'Exactly! Pearson only measures straight-line (linear) association. A strong curved relationship can produce r near zero. This is the classic reason to ALWAYS plot your data first.',
+   fbNg:'Look again. A clear ∪ curve IS a strong relationship — but it is non-linear. Pearson only sees straight lines, so it reports r ≈ 0. The relationship is real; Pearson just can\'t see it.'},
+  {q:'You are analysing customer satisfaction ratings (1–5 stars) against number of repeat purchases, and you spot one extreme outlier. Which coefficient is the safer choice?',
+   opts:['Pearson, because it is more famous','Spearman, because the data is ordinal AND has an outlier','Neither can be used with star ratings','Pearson, because ratings are numbers'],
+   correct:1,
+   fbOk:'Right! Star ratings are ordinal (ordered but not equally spaced), and an outlier is present — two separate reasons to prefer Spearman. It ranks the data, so both problems disappear.',
+   fbNg:'Reconsider. Star ratings are ordinal data, and there\'s an outlier. Both point to Spearman, which works on ranks and is robust to both issues. Pearson\'s assumptions are violated here.'},
+  {q:'In the Pearson worked example (hours studied vs exam score), the numerator Σ(X−x̄)(Y−ȳ) came to 85 and the denominator to about 85.44, giving r ≈ 0.99. What does the numerator actually measure?',
+   opts:['The total number of students','How much X and Y move together (co-vary)','The average exam score','The steepness of the line in degrees'],
+   correct:1,
+   fbOk:'Correct! The numerator sums (X−x̄)(Y−ȳ) — it is large and positive when students above the average in hours are also above the average in scores. It captures how much the two variables move together.',
+   fbNg:'Not quite. The numerator, Σ(X−x̄)(Y−ȳ), measures how much X and Y vary together. The denominator then rescales it into the −1 to +1 range.'},
+  {q:'In the Spearman example, only two employees (P3 and P4) swapped rank order, giving Σd² = 2 with n = 6 and ρ ≈ 0.94. Why did Spearman use ranks instead of the raw ratings?',
+   opts:['Ranks are always more accurate than raw numbers','The rating was a subjective 1–10 scale and the trend was not a perfect straight line','Spearman cannot handle numbers above 10','To make the maths harder'],
+   correct:1,
+   fbOk:'Right! A subjective 1–10 rating is ordinal, and the pattern was monotonic but not perfectly linear. Ranks respect the order without assuming equal spacing — exactly Spearman\'s strength.',
+   fbNg:'Reconsider. Spearman suits this case because the rating is a subjective ordinal scale and the relationship is monotonic but not a perfect straight line. Ranks handle both gracefully.'},
+  {q:'Ice cream sales and drowning incidents are strongly positively correlated. What is the correct conclusion?',
+   opts:['Ice cream causes drowning','Drowning causes ice cream sales','A confounding variable — hot weather — drives both independently','The correlation must be a calculation mistake'],
+   correct:2,
+   fbOk:'Correct! Hot weather is the confounder: it independently pushes up both ice cream sales and swimming (hence drownings). Remove the weather and the link vanishes. Correlation ≠ causation.',
+   fbNg:'No — this is the famous confounder example. Hot weather independently drives both ice cream sales and swimming activity. Neither one causes the other; a third variable causes both.'},
+  {q:'A headline reads "Cheese consumption is linked to bedsheet-tangling deaths." As a data detective, what is your best first question?',
+   opts:['How can I buy less cheese?','What is the plausible mechanism by which cheese could cause this?','Is cheese consumption increasing?','How many types of cheese are there?'],
+   correct:1,
+   fbOk:'Exactly! With no believable mechanism connecting cheese to bedsheet accidents, this is a spurious correlation — real numbers, zero meaning. Always ask for the mechanism before believing a link.',
+   fbNg:'The key detective question is always: "What is the plausible mechanism?" No sensible mechanism links cheese to bedsheet deaths, so it is a spurious correlation — coincidence, not cause.'},
+  {q:'"Happy people exercise more" — someone concludes exercise makes people happy. What alternative explanation must a careful thinker also consider?',
+   opts:['The sample was too colourful','Reverse causation — being happy might cause people to exercise more','Pearson\'s r is undefined for happiness','Exercise is unrelated to anything'],
+   correct:1,
+   fbOk:'Correct! The arrow might point the other way: happiness could drive exercise rather than the reverse. Direction of causation is rarely obvious from correlation alone — only controlled experiments settle it.',
+   fbNg:'Think about direction. The relationship could run in reverse — happiness causing exercise rather than exercise causing happiness. Reverse causation is one of the three explanations for any correlation.'}
+];
+let curQ=0,score=0,answered=false;
+function initQuizDots(){
+  const wrap=document.getElementById('qdots-wrap');if(!wrap)return;
+  wrap.innerHTML=questions.map((_,i)=>`<div class="qdot${i===0?' cur':''}" id="qdot${i}"></div>`).join('');
+}
+function renderQ(){
+  const q=questions[curQ];
+  document.getElementById('qnum').textContent=`Question ${curQ+1} of ${questions.length}`;
+  document.getElementById('qtext').textContent=q.q;
+  const opts=document.getElementById('qopts');opts.innerHTML='';
+  ['A','B','C','D'].forEach((l,i)=>{
+    const d=document.createElement('div');d.className='qopt';
+    d.innerHTML=`<div class="ql">${l}</div>${q.opts[i]}`;d.onclick=()=>ansQ(i);opts.appendChild(d);
+  });
+  document.getElementById('qfb').className='qfb';document.getElementById('qfb').innerHTML='';
+  document.getElementById('qnext').style.display='none';answered=false;
+}
+function ansQ(idx){
+  if(answered)return;answered=true;
+  const q=questions[curQ];
+  document.querySelectorAll('.qopt').forEach(o=>o.classList.add('disabled'));
+  const opts=document.querySelectorAll('.qopt');const fb=document.getElementById('qfb');const dot=document.getElementById('qdot'+curQ);
+  if(idx===q.correct){opts[idx].classList.add('correct');fb.className='qfb show fbok';fb.textContent=q.fbOk;score++;dot.className='qdot done';}
+  else{opts[idx].classList.add('wrong');opts[q.correct].classList.add('correct');fb.className='qfb show fbng';fb.textContent=q.fbNg;dot.className='qdot wd';}
+  const nb=document.getElementById('qnext');nb.style.display='inline-flex';nb.textContent=curQ<questions.length-1?'Next Question →':'See Results';
+}
+function nextQ(){
+  if(curQ<questions.length-1){const d=document.getElementById('qdot'+(curQ+1));if(d)d.className='qdot cur';curQ++;renderQ();}
+  else showScore();
+}
+function showScore(){
+  document.getElementById('qz-wrap').style.display='none';
+  document.getElementById('scoreScr').style.display='block';
+  document.getElementById('scNum').textContent=score;
+  const msgs=['Keep investigating!','Getting warmer!','Good effort!','Solid detective work!','Well done!','Sharp thinking!','Excellent!','Ace investigator!','Perfect — case closed!'];
+  document.getElementById('scMsg').textContent=msgs[score];
+  document.getElementById('scDet').textContent=`You answered ${score} out of ${questions.length} correctly.`;
+  if(score>=7)launchConfetti();
+}
+function restartQuiz(){
+  curQ=0;score=0;answered=false;
+  document.getElementById('qz-wrap').style.display='block';
+  document.getElementById('scoreScr').style.display='none';
+  initQuizDots();renderQ();
+}
+function launchConfetti(){
+  const colors=['#22c55e','#3b82f6','#f59e0b','#ef4444','#7c3aed','#14b8a6'];
+  for(let i=0;i<70;i++){setTimeout(()=>{
+    const c=document.createElement('div');c.className='cp';
+    c.style.left=Math.random()*100+'vw';c.style.background=colors[Math.floor(Math.random()*colors.length)];
+    c.style.animationDuration=(1.5+Math.random()*2)+'s';c.style.animationDelay=Math.random()*.6+'s';
+    document.body.appendChild(c);setTimeout(()=>c.remove(),4000);
+  },i*25);}
+}
+function revealConfounder(){
+  document.getElementById('confReveal').style.display='block';
+  document.getElementById('confBtn').style.display='none';
+}
+function restartModule(){
+  curPage=0;visited.clear();visited.add(0);
+  document.querySelectorAll('.db').forEach(b=>b.remove());
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  document.querySelectorAll('.page').forEach(p=>{p.style.display='none';p.classList.remove('active');});
+  const p0=document.getElementById('page0');if(p0){p0.style.display='block';p0.classList.add('active');}
+  document.getElementById('nav0').classList.add('on');
+  document.getElementById('nfill').style.width='0%';document.getElementById('npct').textContent='0%';
+  restartQuiz();
+}
+
+// redraw canvases on resize for the active page
+window.addEventListener('resize',()=>{
+  const r={1:initFlav,2:drawPlayground,3:drawSetR,4:initPearsonEx,5:drawRankDemo,6:initSpearEx}[curPage];
+  if(r)r();
+});
+
+// INIT
+initQuizDots();renderQ();
+</script>
+</body>
+</html>
